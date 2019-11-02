@@ -15,6 +15,7 @@ const AUTHOR: &str = "Author: <dst>";
 //subcommand names
 const PROJECT_SUB_CMD: &str = "project";
 const CHECKOUT_SUB_CMD: &str = "checkout";
+const INIT_SUB_CMD: &str = "init";
 
 //Argument names
 const ARG_START_PROJECT: &str = "start";
@@ -28,10 +29,10 @@ pub fn create_app<'a, 'b>() -> App<'a,'b> {
 
     let project_sub_cmd = create_project_cmd();
     let checkout_sub_cmd = create_checkout_cmd();
+    let init_sub_cmd = create_init_cmd();
 
     //add sub cmds
-    app = app.subcommand(project_sub_cmd)
-        .subcommand(checkout_sub_cmd);
+    app = app.subcommands(vec![project_sub_cmd, checkout_sub_cmd, init_sub_cmd]);
 
     app
 }
@@ -66,5 +67,12 @@ fn create_checkout_cmd<'b, 'a>() -> App<'a,'b> {
             .help("Name des Projekts auf das gewechselt wird.")
             .value_name("PROJECT NAME")
             .required(true))
+}
+
+fn create_init_cmd<'a,'b>() -> App<'a,'b> {
+    SubCommand::with_name(INIT_SUB_CMD)
+        .author(AUTHOR)
+        .version(VERSION)
+        .about("Erstellt im aktuellen Ordner das Arbeitsverzeichnis")
 }
 
