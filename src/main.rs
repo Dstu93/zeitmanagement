@@ -1,3 +1,8 @@
+
+mod app;
+
 fn main() {
-    println!("Hello, world!");
+    let app = app::create_app();
+    let matches = app.get_matches();
+    println!("Matches: {:#?}",&matches.subcommand());
 }
