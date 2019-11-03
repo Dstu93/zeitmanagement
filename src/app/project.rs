@@ -125,7 +125,7 @@ impl ProjectManager for ProjectManagerImpl {
 
         let project = Project{ name: project_name.to_owned(), tasks: vec![] };
         self.storage.projects.push(project);
-        self.commit();
+        self.commit()?;
         Ok(())
     }
 
