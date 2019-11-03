@@ -3,7 +3,7 @@ use crate::app::{PROJECT_DATABASE, WORKING_DIR};
 
 use serde::{Serialize,Deserialize};
 use std::path::{PathBuf};
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use chrono::Utc;
 use std::io::Error;
 
@@ -32,6 +32,7 @@ pub enum ProjErr {
     ProjAlreadyExists,
     CommentAlreadyExists,
     NoTaskForProject,
+    CouldNotWriteDB,
 }
 
 #[derive(PartialOrd, PartialEq,Clone,Debug,Hash,Serialize,Deserialize)]
@@ -48,22 +49,24 @@ struct ProjectStorage {
 
 struct ProjectManagerImpl{
     storage: ProjectStorage,
+    db_path: PathBuf,
 }
 
 impl ProjectManagerImpl {
     pub fn new() -> Result<ProjectManagerImpl,Error> {
-        let db_path = PathBuf::from(WORKING_DIR)
-            .with_file_name(PROJECT_DATABASE)
-            .with_extension("json");
+        let mut db_path = PathBuf::from(WORKING_DIR);
+            db_path.push(PROJECT_DATABASE);
         if !db_path.exists() {
             File::create(&db_path)?;
             let storage = ProjectStorage{head: None,projects: Vec::new()};
-            return Ok(ProjectManagerImpl{storage});
+            let project_manager = ProjectManagerImpl{storage,db_path};
+            let _ = project_manager.commit();
+            return Ok(project_manager);
         }
-        let db_file = File::open(db_path).unwrap();
+        let db_file = File::open(&db_path).unwrap();
         let storage: ProjectStorage = serde_json::from_reader(db_file)
             .expect("Konnte Projekt Datenbank nicht lesen");
-        Ok(ProjectManagerImpl{storage})
+        Ok(ProjectManagerImpl{storage,db_path})
     }
 
     fn project_exists(&self, name: &str) -> bool {
@@ -85,6 +88,20 @@ impl ProjectManagerImpl {
         }
         Err(ProjErr::ProjNotFound)
     }
+
+    fn commit(&self) -> Result<(),ProjErr>{
+        let file = OpenOptions::new()
+            .truncate(true)
+            .write(true)
+            .open(&self.db_path).expect("Konnte DB nicht öffnen");
+        match serde_json::to_writer_pretty(file,&self.storage){
+            Ok(_) => {Ok(())},
+            Err(e) => {
+                println!("Fehler beim schreiben der Projektdatenbank. {:#?}",e);
+                Err(ProjErr::CouldNotWriteDB)
+            },
+        }
+    }
 }
 
 impl ProjectManager for ProjectManagerImpl {
@@ -97,6 +114,7 @@ impl ProjectManager for ProjectManagerImpl {
             else { return Err(ProjErr::ProjNotFound) }
         }
         self.storage.head = Some(project.to_owned());
+        self.commit()?;
         Ok(())
     }
 
@@ -107,6 +125,7 @@ impl ProjectManager for ProjectManagerImpl {
 
         let project = Project{ name: project_name.to_owned(), tasks: vec![] };
         self.storage.projects.push(project);
+        self.commit();
         Ok(())
     }
 
@@ -124,6 +143,7 @@ impl ProjectManager for ProjectManagerImpl {
             return Err(ProjErr::CommentAlreadyExists);
         }
         task.comment = Some(comment.to_owned());
+        self.commit()?;
         Ok(())
     }
 
@@ -151,6 +171,7 @@ impl ProjectManager for ProjectManagerImpl {
         let comment = to_owned_string(comment);
         let new_task = Task{ start: Utc::now(), end: None, comment };
         project.tasks.push(new_task);
+        self.commit()?;
         Ok(())
     }
 
@@ -161,6 +182,7 @@ impl ProjectManager for ProjectManagerImpl {
             None => {return Err(ProjErr::NoTaskForProject)}
         };
         last_task.end = Some(Utc::now());
+        self.commit()?;
         Ok(())
     }
 
