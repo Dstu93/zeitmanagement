@@ -26,13 +26,19 @@ impl CmdExecutor {
             Ok(m) => { m },
             Err(e) => {panic!("Fehler beim Projektmanagement: {}", e.description())},
         };
-        if args.is_present(ARG_START_PROJECT) {
-            let comment = args.value_of(ARG_COMMENT);
-            mng.start_work(comment)?;
-            return Ok(());
-        } else if args.is_present(ARG_STOP_PROJECT) {
-            mng.stop_work()?;
-            return Ok(());
+        match args.subcommand() {
+            (ARG_START_PROJECT,Some(args)) => {
+                println!("starte neuen Task");
+                let comment = args.value_of(ARG_COMMENT);
+                mng.start_work(comment)?;
+                return Ok(());
+            }
+            (ARG_STOP_PROJECT,_) => {
+                println!("Stoppe aktuellen Task");
+                mng.stop_work()?;
+                return Ok(());
+            }
+            _ => {println!("fehlende Commands für tm-project")}
         }
         Ok(())
     }

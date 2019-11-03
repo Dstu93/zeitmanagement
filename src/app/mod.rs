@@ -43,23 +43,21 @@ pub fn create_app<'a, 'b>() -> App<'a,'b> {
 }
 
 fn create_project_cmd<'a, 'b>() -> App<'a,'b> {
-    SubCommand::with_name(PROJECT_SUB_CMD)
-        .version(VERSION)
-        .author(AUTHOR)
-        .about("Kommando zum verwalten von projekten")
-        .arg(Arg::with_name(ARG_START_PROJECT)
-            .takes_value(false)
-            .conflicts_with_all(&[ARG_STOP_PROJECT])
-            .help("startet einen neuen Task für das derzeitig aktive Projekt"))
-        .arg(Arg::with_name(ARG_STOP_PROJECT)
-            .takes_value(false)
-            .conflicts_with_all(&[ARG_START_PROJECT])
-            .help("stop die arbeit an derzeitigem Projekt und setzt die aktuelle Zeit als Ende am derztigen Task"))
+    let stop_sub_cmd = SubCommand::with_name(ARG_STOP_PROJECT)
+        .help("stop die arbeit an derzeitigem Projekt und setzt die aktuelle Zeit als Ende am derztigen Task");
+    let start_sub_cmd = SubCommand::with_name(ARG_START_PROJECT)
+        .help("startet einen neuen Task für das derzeitig aktive Projekt")
         .arg(Arg::with_name(ARG_COMMENT)
             .takes_value(true)
             .long("comment")
             .short("m")
-            .help("Fügt ein Kommentar am Task an."))
+            .help("Fügt ein Kommentar am Task an."));
+    SubCommand::with_name(PROJECT_SUB_CMD)
+        .version(VERSION)
+        .author(AUTHOR)
+        .about("Kommando zum verwalten von projekten")
+        .subcommand(start_sub_cmd)
+        .subcommand(stop_sub_cmd)
     //TODO ADD COMMENT
 }
 

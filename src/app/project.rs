@@ -165,8 +165,10 @@ impl ProjectManager for ProjectManagerImpl {
         let project = self.get_current_proj_mut()?;
 
         if let Some(task) = project.tasks.last_mut() {
-            println!("Letzter Task wurde nich beendet. Beende letzten Task: {:#?}", &task);
-            task.stop()
+            if task.end.is_none() {
+                println!("Letzter Task wurde nich beendet. Beende letzten Task: {:#?}", &task);
+                task.stop()
+            }
         };
         let comment = to_owned_string(comment);
         let new_task = Task{ start: Utc::now(), end: None, comment };
@@ -181,7 +183,7 @@ impl ProjectManager for ProjectManagerImpl {
             Some(task) => {task},
             None => {return Err(ProjErr::NoTaskForProject)}
         };
-        last_task.end = Some(Utc::now());
+        last_task.stop();
         self.commit()?;
         Ok(())
     }
