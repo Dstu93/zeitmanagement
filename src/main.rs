@@ -19,6 +19,12 @@ fn main() {
         ("init", Some(_args)) => {
             CmdExecutor::init_working_dir().unwrap();
         },
+        ("export",Some(args)) => {
+            match CmdExecutor::execute_export_cmd(args) {
+                Ok(_) => {},
+                Err(e) => {println!("Export fehlgeschlagen: {:#?}",e)},
+            }
+        },
         _ => {println!("Geben Sie ein Kommando an. Siehe --help")}
     };
 }

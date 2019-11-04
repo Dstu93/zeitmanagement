@@ -3,6 +3,7 @@ pub mod work;
 pub mod task;
 pub mod project;
 pub mod cmd_executor;
+pub mod export;
 
 use clap::{App, SubCommand, Arg};
 
@@ -17,6 +18,10 @@ const AUTHOR: &str = "Author: <dst>";
 pub const PROJECT_SUB_CMD: &str = "project";
 pub const CHECKOUT_SUB_CMD: &str = "checkout";
 pub const INIT_SUB_CMD: &str = "init";
+
+pub const EXPORT_SUB_CMD: &str = "export";
+pub const EXPORT_FILE_ARG: &str = "csv_file";
+pub const EXPORT_PROJECT_ARG: &str = "export_project";
 
 //Argument names
 pub const ARG_START_PROJECT: &str = "start";
@@ -35,9 +40,10 @@ pub fn create_app<'a, 'b>() -> App<'a,'b> {
     let project_sub_cmd = create_project_cmd();
     let checkout_sub_cmd = create_checkout_cmd();
     let init_sub_cmd = create_init_cmd();
+    let export_sub_cmd = create_export_cmd();
 
     //add sub cmds
-    app = app.subcommands(vec![project_sub_cmd, checkout_sub_cmd, init_sub_cmd]);
+    app = app.subcommands(vec![project_sub_cmd, checkout_sub_cmd, init_sub_cmd,export_sub_cmd]);
 
     app
 }
@@ -76,6 +82,25 @@ fn create_checkout_cmd<'b, 'a>() -> App<'a,'b> {
             .help("Name des Projekts auf das gewechselt wird.")
             .value_name("PROJECT NAME")
             .required(true))
+}
+
+fn create_export_cmd<'a,'b>() -> App<'a,'b> {
+    SubCommand::with_name(EXPORT_SUB_CMD)
+        .author(AUTHOR)
+        .version(VERSION)
+        .about("Exportiert ein Projekt als CSV")
+        .arg(Arg::with_name(EXPORT_FILE_ARG)
+            .required(true)
+            .long("file")
+            .short("f")
+            .value_name("DATEI")
+            .takes_value(true))
+        .arg(Arg::with_name(EXPORT_PROJECT_ARG)
+            .required(true)
+            .long("project")
+            .short("p")
+            .value_name("PROJEKT NAME")
+            .takes_value(true))
 }
 
 fn create_init_cmd<'a,'b>() -> App<'a,'b> {
