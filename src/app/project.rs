@@ -32,7 +32,8 @@ pub enum ProjErr {
     ProjAlreadyExists,
     CommentAlreadyExists,
     NoTaskForProject,
-    CouldNotWriteDB,
+    DBAccessError,
+    HeadPointsToNone,
 }
 
 #[derive(PartialOrd, PartialEq,Clone,Debug,Hash,Serialize,Deserialize)]
@@ -63,9 +64,8 @@ impl ProjectManagerImpl {
             let _ = project_manager.commit();
             return Ok(project_manager);
         }
-        let db_file = File::open(&db_path).unwrap();
-        let storage: ProjectStorage = serde_json::from_reader(db_file)
-            .expect("Konnte Projekt Datenbank nicht lesen");
+        let db_file = File::open(&db_path)?;
+        let storage: ProjectStorage = serde_json::from_reader(db_file)?;
         Ok(ProjectManagerImpl{storage,db_path})
     }
 
@@ -79,7 +79,7 @@ impl ProjectManagerImpl {
     fn get_current_proj_mut(&mut self) -> Result<&mut Project,ProjErr> {
         let project_name = match &self.storage.head {
             Some(proj) => {proj},
-            _ => panic!("head points to none")
+            _ => return Err(ProjErr::HeadPointsToNone)
         };
         for project in self.storage.projects.iter_mut() {
             if project.name.eq(project_name) {
@@ -93,12 +93,12 @@ impl ProjectManagerImpl {
         let file = OpenOptions::new()
             .truncate(true)
             .write(true)
-            .open(&self.db_path).expect("Konnte DB nicht öffnen");
+            .open(&self.db_path)?;
         match serde_json::to_writer_pretty(file,&self.storage){
             Ok(_) => {Ok(())},
             Err(e) => {
                 println!("Fehler beim schreiben der Projektdatenbank. {:#?}",e);
-                Err(ProjErr::CouldNotWriteDB)
+                Err(ProjErr::DBAccessError)
             },
         }
     }
@@ -194,5 +194,12 @@ fn to_owned_string(comment: Option<&str>) -> Option<String> {
     match comment {
         None => { None },
         Some(str) => { Some(str.to_string()) },
+    }
+}
+
+impl From<std::io::Error> for ProjErr {
+    fn from(e: Error) -> Self {
+        println!("Database access Error: {:#?}",e);
+        ProjErr::DBAccessError
     }
 }

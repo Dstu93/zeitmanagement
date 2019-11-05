@@ -17,7 +17,12 @@ fn main() {
             if let Err(error) = CmdExecutor::execute_checkout_cmd(args){print_error(error)};
         },
         ("init", Some(_args)) => {
-            CmdExecutor::init_working_dir().unwrap();
+            match CmdExecutor::init_working_dir(){
+                Ok(_) => {},
+                Err(e) => {
+                    println!("Fehler beim initalisieren des Projekt Ordners: {:#?}",e);
+                },
+            }
         },
         ("export",Some(args)) => {
             match CmdExecutor::execute_export_cmd(args) {
@@ -43,9 +48,12 @@ fn print_error(e: ProjErr) {
         ProjErr::NoTaskForProject => {
             println!("Es gibt keinen Task für dieses Projekt");
         },
-        ProjErr::CouldNotWriteDB => {
+        ProjErr::DBAccessError => {
             println!("Konnte Datenbank nicht beschreiben");
-        },
+        }
+        ProjErr::HeadPointsToNone => {
+            println!("Es wurde kein Projekt ausgewählt, siehe tm checkout --help");
+        }
     };
 }
 

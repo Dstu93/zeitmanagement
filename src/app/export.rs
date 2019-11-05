@@ -2,7 +2,6 @@ use crate::app::project::Project;
 use std::io::{Error, Write};
 use std::fs::OpenOptions;
 
-
 pub fn export_project_as_csv(project: &Project, target_file: &str) -> Result<(),Error> {
     let mut file = OpenOptions::new()
         .write(true)
@@ -21,8 +20,11 @@ pub fn export_project_as_csv(project: &Project, target_file: &str) -> Result<(),
             None => {""},
             Some(comment) => {&*comment},
         };
-        let time = task.end.unwrap().signed_duration_since(task.start);
-        let row = format!("{};{};{};{};{}\n",name,task_start,task_end,comment,time.num_minutes());
+        let time = match task.end {
+            None => {String::new()},
+            Some(end) => {format!("{}",end.signed_duration_since(task.start))},
+        };
+        let row = format!("{};{};{};{};{}\n",name,task_start,task_end,comment,time);
         content.push_str(&row);
     }
 

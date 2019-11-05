@@ -8,7 +8,6 @@ pub mod export;
 use clap::{App, SubCommand, Arg};
 
 pub const PROJECT_DATABASE: &str = "projects.db";
-pub const WORK_DAY_DB: &str = "work_day";
 pub const WORKING_DIR: &str = ".tm/";
 
 const VERSION: &str = "Version: 0.1";

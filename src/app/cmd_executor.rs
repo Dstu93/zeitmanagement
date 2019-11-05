@@ -4,7 +4,6 @@ use std::path::Path;
 use crate::app::{WORKING_DIR, ARG_START_PROJECT, ARG_STOP_PROJECT, ARG_COMMENT, CHECKOUT_ARG_PROJECT, CHECKOUT_ARG_CREATE, EXPORT_PROJECT_ARG, EXPORT_FILE_ARG};
 use clap::ArgMatches;
 use crate::app::project::{create_project_manager, ProjectManager, ProjErr};
-use std::error::Error;
 use crate::app::export::export_project_as_csv;
 
 pub struct CmdExecutor;
@@ -23,10 +22,7 @@ impl CmdExecutor {
     }
 
     pub fn execute_project_cmd(args: &ArgMatches) -> Result<(),ProjErr> {
-        let mut mng = match create_project_manager() {
-            Ok(m) => { m },
-            Err(e) => {panic!("Fehler beim Projektmanagement: {}", e.description())},
-        };
+        let mut mng = create_project_manager()?;
         match args.subcommand() {
             (ARG_START_PROJECT,Some(args)) => {
                 println!("starte neuen Task");
@@ -45,27 +41,55 @@ impl CmdExecutor {
     }
 
     pub fn execute_checkout_cmd(args: &ArgMatches) -> Result<(),ProjErr> {
-        let mut mng = match create_project_manager() {
-            Ok(mng) => {mng},
-            Err(e) => {panic!("Fehler beim initialieseren des ProjektManagers, {:#?}",e)},
+        let mut mng = create_project_manager()?;
+
+        let project = match args.value_of(CHECKOUT_ARG_PROJECT) {
+            None => {return Err(ProjErr::ProjNotFound)},
+            Some(project_name) => {project_name},
         };
-        let project = args.value_of(CHECKOUT_ARG_PROJECT).unwrap(); //catched by clap
+
         let create_if_not_exist = args.is_present(CHECKOUT_ARG_CREATE);
         mng.switch_project(project,create_if_not_exist)?;
         Ok(())
     }
 
-    pub fn execute_export_cmd(args: &ArgMatches) -> Result<(),std::io::Error> {
-        let project_name = args.value_of(EXPORT_PROJECT_ARG).expect("Kein Projekt angegeben");
-        let file_name = args.value_of(EXPORT_FILE_ARG).expect("Keine Zieldatei angegeben");
+    pub fn execute_export_cmd(args: &ArgMatches) -> Result<(),ExportError> {
+        let project_name = match args.value_of(EXPORT_PROJECT_ARG) {
+            None => {
+                return Err(ExportError::MissingProjectArg);
+            },
+            Some(name) => {name},
+        };
+
+        let file_name = match args.value_of(EXPORT_FILE_ARG){
+            None => {
+                return Err(ExportError::MissingTargetFileArg);
+            },
+            Some(file_path) => {file_path},
+        };
 
         let project_manager = create_project_manager()?;
         if let Ok(project) = project_manager.find(project_name) {
             export_project_as_csv(project,file_name)?;
         } else {
-            println!("Kein Projekt zum exportieren gefunden.");
+            return Err(ExportError::ProjectNotFound);
         }
         Ok(())
+    }
+}
+
+#[derive(Ord, PartialOrd, Eq, PartialEq,Copy, Clone,Debug,Hash)]
+pub enum ExportError {
+    IoError,
+    MissingProjectArg,
+    MissingTargetFileArg,
+    ProjectNotFound,
+}
+
+impl From<std::io::Error> for ExportError {
+    fn from(e: std::io::Error) -> Self {
+        println!("IO Error beim Export: {:#?}",e);
+        ExportError::IoError
     }
 }
 
