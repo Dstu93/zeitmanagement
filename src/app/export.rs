@@ -46,5 +46,5 @@ fn task_to_row(name: &str, task: &Task) -> (String,i64) {
 
 fn to_locale_date_string(date: &DateTime<Utc>) -> String {
     let local_date = date.with_timezone(&Local);
-    local_date.format("%d-%m-%y %H:%M Uhr").to_string()
+    local_date.format("%H:%M Uhr %d-%m-%Y").to_string()
 }
