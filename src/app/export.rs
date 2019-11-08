@@ -2,7 +2,7 @@ use crate::app::project::Project;
 use std::io::{Error, Write};
 use std::fs::OpenOptions;
 use crate::app::task::Task;
-use chrono::{DateTime, Utc, Local, TimeZone};
+use chrono::{DateTime, Utc, Local};
 
 pub fn export_project_as_csv(project: &Project, target_file: &str) -> Result<(),Error> {
     let mut file = OpenOptions::new()
