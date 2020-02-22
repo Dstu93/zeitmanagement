@@ -10,7 +10,7 @@ pub fn export_project_as_csv(project: &Project, target_file: &str) -> Result<(),
         .create_new(true)
         .open(target_file)?;
     let mut content = String::new();
-    content.push_str("Projekt;Start;Ende;Tätigkeit;Zeit in Minuten\n");
+    content.push_str("Projekt;Start;Startzeit;Ende;Endzeit;Tätigkeit;Zeit in Minuten\n");
     let name = &project.name;
     let mut minutes_sum = 0;
     for task in &project.tasks {
@@ -26,9 +26,10 @@ pub fn export_project_as_csv(project: &Project, target_file: &str) -> Result<(),
 
 fn task_to_row(name: &str, task: &Task) -> (String,i64) {
     let task_start = to_locale_date_string(&task.start);
-    let task_end = match task.end {
-        None => { String::new() },
-        Some(date) => { to_locale_date_string(&date) },
+    let task_start_time = to_locale_time_string(&task.start);
+    let (task_end,task_end_time) = match task.end {
+        None => { (String::new(),String::new()) },
+        Some(date) => { (to_locale_date_string(&date),to_locale_time_string(&date)) },
     };
     let comment = match &task.comment {
         None => { "" },
@@ -40,11 +41,16 @@ fn task_to_row(name: &str, task: &Task) -> (String,i64) {
             end.signed_duration_since(task.start).num_minutes()
         },
     };
-    let row = format!("{};{};{};{};{}\n", name, task_start, task_end, comment, task_duration);
+    let row = format!("{};{};{};{};{};{};{}\n", name, task_start,task_start_time,task_end,task_end_time, comment, task_duration);
     (row, task_duration)
 }
 
 fn to_locale_date_string(date: &DateTime<Utc>) -> String {
     let local_date = date.with_timezone(&Local);
-    local_date.format("%H:%M Uhr %d-%m-%Y").to_string()
+    local_date.format("%d-%m-%Y").to_string()
+}
+
+fn to_locale_time_string(date: &DateTime<Utc>) -> String {
+    let date_time = date.with_timezone(&Local);
+    date_time.format("%H:%M Uhr").to_string()
 }
